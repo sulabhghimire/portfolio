@@ -1,0 +1,17 @@
+[project]
+name = "personal-gpt-context-engine"
+version = "0.1.0"
+description = "This is a personal GPT context engine. This engine responsibility is to mange vector data for the personal GPT application."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.121.2",
+    "pydantic-settings>=2.12.0",
+    "pymupdf>=1.26.6",
+    "python-dotenv>=1.2.1",
+    "python-multipart>=0.0.20",
+    "redis>=7.0.1",
+    "typing>=3.10.0.0",
+    "uvicorn>=0.38.0",
+]
