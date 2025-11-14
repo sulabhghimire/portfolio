@@ -1,14 +1,15 @@
-import sys
 import uvicorn
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 
 from config import settings
-from redis_client import job_manager
 from background_jobs import run_cv_ingestion_job
 from models import ProcessingJobType, ProcessingJobResponse
 from utils import generate_unique_id
+
+from config import connect_to_redis
+from job_manager import job_manager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,11 +21,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not job_manager:
-        logger.critical(
-            "FATAL: JobStatusManager could not be initialized. Redis connection failed."
-        )
-        sys.exit(1)
+
+    redis = connect_to_redis()
+    job_manager.set_client(redis)
     yield
 
 
@@ -54,12 +53,15 @@ async def upload_cv(
 
     # Create a new job in Redis
     job = job_manager.create_job(
-        job_id=job_id, job_type=ProcessingJobType.CV_PARSING, filename=file.filename
+        job_id=job_id, job_type=ProcessingJobType.CV_INGESTION, filename=file.filename
     )
 
     # Add cv ingestion job to background
     background_tasks.add_task(
-        run_cv_ingestion_job, file_bytes=file_bytes, filename=file.filename
+        run_cv_ingestion_job,
+        job_id=job_id,
+        file_bytes=file_bytes,
+        filename=file.filename,
     )
 
     # prepare a response

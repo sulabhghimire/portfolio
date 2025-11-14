@@ -25,7 +25,6 @@ class EnvironmentSettings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_CONTEXT_ENGINE_DB: int
-    REDIS_USER_NAME: str
     REDIS_PASSWORD: str
 
     model_config = SettingsConfigDict(

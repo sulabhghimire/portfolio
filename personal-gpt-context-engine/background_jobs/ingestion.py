@@ -1,9 +1,9 @@
 import logging
 
-from redis_client import job_manager
+from job_manager import job_manager
 from resume_parser import extract_text_from_pdf
 
-from models import JobStatus, ProcessingJobType
+from models import JobStatus, JobStage
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +22,7 @@ async def run_cv_ingestion_job(job_id: str, file_bytes: bytes, filename: str):
         job_manager.update_job(
             job_id=job_id,
             updates={
-                "job_stage": ProcessingJobType.EXTRACTING_TEXT,
+                "job_stage": JobStage.EXTRACTING_TEXT,
                 "status": JobStatus.RUNNING,
                 "details": "Extracting text from the uploaded CV.",
             },

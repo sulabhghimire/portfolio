@@ -1,11 +1,11 @@
-from redis import Redis, exceptions as redis_exceptions
 import json
 import logging
+
+from redis import Redis
 from typing import Optional
 from datetime import datetime, timezone
 
 from models import JobStatus, ProcessingJobType, JobStage, ProcessingJob
-from config import settings
 
 
 logging.basicConfig(
@@ -15,36 +15,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Establish a connection to the Redis server
-# The decode_responses=True argument makes Redis return strings instead of bytes
-try:
-    print(settings)
-    redis_client = Redis(
-        host=settings.REDIS_HOST,
-        port=settings.REDIS_PORT,
-        db=settings.REDIS_CONTEXT_ENGINE_DB,
-        username=settings.REDIS_USER_NAME,
-        password=settings.REDIS_PASSWORD,
-        decode_responses=True,
-        health_check_interval=200,
-    )
-    redis_client.ping()  # Check the connection
-    logger.info("Successfully connected to Redis.")
-except redis_exceptions.ConnectionError as e:
-    logger.error(f"Failed to connect to Redis server: {e}")
-    redis_client = None
 
+class _JobStatusManager:
+    """Manages storing and retrieving job status information in Redis."""
 
-class JobStatusManager:
-    """
-    Manages storing and retrieving job status information in Redis.
-    """
+    _client: Redis = None  # The client will be attached at startup
+    key_prefix = "processing_job"
 
-    def __init__(self, client: Redis):
-        if not client:
-            raise ConnectionError("Redis client is not initialized.")
-        self.client = redis_client
-        self.key_prefix = "processing_job"
+    def set_client(self, client: Redis):
+        """Attaches the active Redis client to the manager instance."""
+        logger.info("Redis client has been attached to JobStatusManager.")
+        self._client = client
+
+    @property
+    def client(self) -> Redis:
+        """Provides access to the client, ensuring it has been set."""
+        if self._client is None:
+            raise ConnectionError(
+                "Redis client has not been initialized. The app may be starting up or the connection failed."
+            )
+        return self._client
 
     def _get_key(self, job_id: str) -> str:
         """Generate Redis key for a given job ID."""
@@ -111,4 +101,4 @@ class JobStatusManager:
             return None
 
 
-job_manager = JobStatusManager(redis_client) if redis_client else None
+job_manager = _JobStatusManager()
