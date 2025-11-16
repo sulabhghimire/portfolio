@@ -5,4 +5,5 @@ export interface IRoute {
     element: JSX.Element;
     outlet?: JSX.Element;
     outletKey?: string;
+    index?: boolean
 }

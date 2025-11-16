@@ -1,42 +1,56 @@
-import { Route, Routes } from "react-router-dom";
+import React, { useMemo } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import type { IRoute } from "../types/router";
-import { useMemo } from "react";
 
-const generateRoutes = (routes: IRoute[], routerPrefix: string) => {
+type IProps = {
+  routes: IRoute[];
+  routerPrefix?: string;
+};
 
-    const groupedRoutes = useMemo(() => {
-        const groupedRoutes = routes.reduce((acc, curr) => {
-            const key = curr.outletKey || "default"
-            if(!acc[key]) acc[key] = [];
-            acc[key].push(curr);
-            return acc;
-        }, {} as Record<string, IRoute[]>)
-        return groupedRoutes;
-    }, [routes])
+const GenerateRoutes = ({ routes, routerPrefix = "r" }: IProps) => {
+  // group routes by outletKey
+  const groupedRoutes = useMemo(() => {
+    return routes.reduce<Record<string, IRoute[]>>((acc, curr) => {
+      const key = curr.outletKey ?? "default";
+      (acc[key] ||= []).push(curr);
+      return acc;
+    }, {});
+  }, [routes]);
 
-    return (
+  return (
     <Routes>
       {Object.entries(groupedRoutes).map(([groupKey, groupRoutes]) => {
-        // pick the shared header/footer/outlet from the first route in the group (convention)
-        const outlet = groupRoutes[0].outlet;
+        const first = groupRoutes[0];
+        const layoutEl = first?.outlet ?? undefined; // should be a JSX element like <AppLayout />
 
-
-        // Parent route provides the layout; no `path` so it acts as a layout wrapper for its children.
         return (
           <Route
             key={`${routerPrefix}-group-${groupKey}`}
-            element={
-              outlet
-            }
+            // if layoutEl is undefined, no layout wrapper; children will be rendered at root
+            {...(layoutEl ? { element: layoutEl } : {})}
           >
-            {groupRoutes.map((route, idx) => {
-              // make child route path relative (remove leading slash if present)
-              const childPath = route.path.replace(/^\//, "");
+            {groupRoutes.map((rt, idx) => {
+              // Normalize path and index:
+              // treat "/" or "" as index route
+              const raw = rt.path ?? "";
+              const normalized = raw.replace(/^\//, ""); // remove leading slash for relative path
+              const isIndex = rt.index || raw === "/" || normalized === "";
+
+              if (isIndex) {
+                return (
+                  <Route
+                    key={`${routerPrefix}-${groupKey}-idx-${idx}`}
+                    index
+                    element={rt.element}
+                  />
+                );
+              }
+
               return (
                 <Route
                   key={`${routerPrefix}-${groupKey}-${idx}`}
-                  path={childPath}
-                  element={route.element}
+                  path={normalized}
+                  element={rt.element}
                 />
               );
             })}
@@ -44,9 +58,10 @@ const generateRoutes = (routes: IRoute[], routerPrefix: string) => {
         );
       })}
 
-      {/* optional: fallback / catch-all can be added here */}
+      {/* optional catch-all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-export default generateRoutes;
+export default GenerateRoutes;

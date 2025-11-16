@@ -7,25 +7,19 @@ import type { IRoute } from "../../types/router";
 import generateRoutes from "../../utils/routes";
 
 const HomePage = lazy(() => import("../../pages/HomePage"));
-const Chat = lazy(() => import("../../pages/Chat"));
-
 
 const AppRouter = () => {
 
     const routes: IRoute[] = useMemo(() => [
         {
             path: "/",
+            index: true,
             element: <PageLoader><HomePage/></PageLoader>,
-            outlet: <AppLayout/>
-        },
-        {
-            path: "/chat",
-            element: <Chat/>,
             outlet: <AppLayout/>
         }
     ], [])
 
-    return <BrowserRouter>{generateRoutes(routes, "index-")}</BrowserRouter>;
+    return <BrowserRouter>{generateRoutes({routes, routerPrefix:"main"})}</BrowserRouter>;
 
 }
 

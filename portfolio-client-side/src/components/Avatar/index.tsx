@@ -3,10 +3,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import ProfilePicDark from "../../assets/profile-pic-dark.jpeg"
 import ProfilePicLight from "../../assets/profile-pic-light.png"
 import { useTheme } from "../../context/ThemeContext";
+import { cn } from "../../utils/cn";
 
-const Avatar = () => {
+const Avatar = ({className}: {className?: string}) => {
 
-    const {theme} = useTheme();
+  const {theme} = useTheme();
   const src = theme === "light" ? ProfilePicLight : ProfilePicDark;
 
     return (
@@ -16,7 +17,7 @@ const Avatar = () => {
           key={src} // important for AnimatePresence to trigger exit/enter
           src={src}
           alt="Profile"
-          className="absolute inset-0 h-full w-full rounded-full object-cover border border-zinc-200 dark:border-zinc-800 cursor-pointer"
+          className={cn("absolute inset-0 h-full w-full rounded-full object-cover border border-zinc-200 dark:border-zinc-800 cursor-pointer", className)}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}

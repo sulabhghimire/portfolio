@@ -2,13 +2,13 @@
 import './App.css';
 
 import { ThemeProvider } from '../context/ThemeContext';
-import AppLayout from '../components/AppLayout';
+import AppRouter from '../components/AppRouter';
 
 function App() {
 
   return (
     <ThemeProvider>
-      <AppLayout/>
+      <AppRouter/>
     </ThemeProvider>
   )
 }
