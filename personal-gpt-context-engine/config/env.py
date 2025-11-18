@@ -27,6 +27,11 @@ class EnvironmentSettings(BaseSettings):
     REDIS_CONTEXT_ENGINE_DB: int
     REDIS_PASSWORD: str
 
+    # Qdrant Settings
+    QDRANT_HOST: str
+    QDRANT_PORT: int
+    QDRANT_API_KEY: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
