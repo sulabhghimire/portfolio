@@ -25,7 +25,9 @@ def _parse_pdf_sync(pdf_bytes: bytes) -> str:
         logger.info(f"Opened PDF document with {pdf_document.page_count} pages.")
 
         for page in pdf_document:
-            text_content.append(page.get_text())
+            content = page.get_text().strip()
+            if content is not "":
+                text_content.append(content)
 
         logger.info("Completed text extraction from PDF.")
         return "".join(text_content)
