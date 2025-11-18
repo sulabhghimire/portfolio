@@ -26,7 +26,7 @@ def _parse_pdf_sync(pdf_bytes: bytes) -> str:
 
         for page in pdf_document:
             content = page.get_text().strip()
-            if content is not "":
+            if content != "":
                 text_content.append(content)
 
         logger.info("Completed text extraction from PDF.")
