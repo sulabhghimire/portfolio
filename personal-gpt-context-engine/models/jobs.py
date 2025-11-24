@@ -5,6 +5,15 @@ from datetime import datetime, timezone
 from typing import Optional
 
 
+class EmbeddingType(str, Enum):
+    """
+    Enumeration of task type for embedding model.
+    """
+
+    RETRIEVAL_DOCUMENT = "retrieval document"
+    RETRIEVAL_QUERY = "retrieval query"
+
+
 class JobStatus(str, Enum):
     """
     Enumeration of possible job statuses.
@@ -23,7 +32,7 @@ class JobStage(str, Enum):
 
     QUEUED = "QUEUED"
     EXTRACTING_TEXT = "EXTRACTING_TEXT"
-    VECTORIZING = "VECTORIZING"
+    VECTORIZATION = "VECTORIZATION"
     COMPLETED = "COMPLETED"
 
 

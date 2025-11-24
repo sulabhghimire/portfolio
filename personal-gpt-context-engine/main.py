@@ -2,13 +2,13 @@ import uvicorn
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from starlette.concurrency import run_in_threadpool
 
-from config import settings
-from background_jobs import run_cv_ingestion_job
+from config import settings, connect_to_redis, connect_to_qdrant
 from models import ProcessingJobType, ProcessingJobResponse
+from background_jobs import run_cv_ingestion_job
 from utils import generate_unique_id
 
-from config import connect_to_redis
 from job_manager import job_manager
 
 logging.basicConfig(
@@ -22,9 +22,55 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    redis = connect_to_redis()
-    job_manager.set_client(redis)
-    yield
+    try:
+        logger.info("Startup: connecting to Redis...")
+        redis = await run_in_threadpool(connect_to_redis)
+    except Exception as exc:
+        logger.exception("Startup: failed to connect to Redis. Aborting startup.")
+        raise
+
+    try:
+        job_manager.set_client(redis)
+    except Exception:
+        logger.exception(
+            "Failed to set redis client on job_manager. Closing redis and aborting."
+        )
+        try:
+            redis.close()
+        except Exception:
+            logger.exception(
+                "Error while closing redis after failed job_manager.set_client()"
+            )
+        raise
+
+    try:
+        logger.info("Startup: validating Qdrant connectivity...")
+        # run the blocking connect function in a threadpool and wait for it
+        await run_in_threadpool(connect_to_qdrant)
+    except Exception as exc:
+        logger.exception(
+            "Startup: failed to validate Qdrant. Cleaning up and aborting startup."
+        )
+        # Cleanup Redis before re-raising so we don't leak resources
+        try:
+            redis.close()
+        except Exception:
+            logger.exception(
+                "Error while closing redis during shutdown after qdrant failure"
+            )
+        raise
+
+    logger.info("Startup: Redis connected and Qdrant reachable. Starting app.")
+
+    try:
+        yield
+    finally:
+        # --- Shutdown cleanup ---
+        logger.info("Shutdown: closing redis client.")
+        try:
+            redis.close()
+        except Exception:
+            logger.exception("Error while closing redis on shutdown")
 
 
 app = FastAPI(title="Personal GPT Context Engine", version="1.0.0", lifespan=lifespan)

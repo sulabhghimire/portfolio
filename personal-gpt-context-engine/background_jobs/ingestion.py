@@ -1,7 +1,7 @@
 import logging
 
 from job_manager import job_manager
-from resume_parser import extract_text_from_pdf
+from services import extract_text_from_pdf, process_and_store_text
 
 from models import JobStatus, JobStage
 
@@ -44,17 +44,36 @@ async def run_cv_ingestion_job(job_id: str, file_bytes: bytes, filename: str):
             )
             return
 
-        # TODO: The perform vectorization step would go here
-
+        # Vectorization
         job_manager.update_job(
             job_id=job_id,
             updates={
-                "status": JobStatus.COMPLETED,
-                "stage": JobStatus.COMPLETED,
-                "details": "CV has been successfully parsed.",
+                "job_stage": JobStage.VECTORIZATION,
+                "status": JobStatus.RUNNING,
+                "details": "Vectoring the text.",
             },
         )
-        logger.info(f"Successfully completed job {job_id}")
+        success = process_and_store_text(extracted_text, job_id)
+        if success:
+            job_manager.update_job(
+                job_id=job_id,
+                updates={
+                    "status": JobStatus.COMPLETED,
+                    "stage": JobStage.COMPLETED,
+                    "details": "CV has been successfully parsed.",
+                },
+            )
+            logger.info(f"Successfully completed job {job_id}")
+        else:
+            job_manager.update_job(
+                job_id=job_id,
+                updates={
+                    "status": JobStatus.FAILED,
+                    "stage": JobStage.VECTORIZATION,
+                    "details": "CV has been successfully parsed.",
+                },
+            )
+            logger.error(f"Error completing job {job_id}")
 
     except Exception as e:
         logger.error(

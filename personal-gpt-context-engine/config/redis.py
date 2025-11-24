@@ -1,6 +1,6 @@
 import logging
 
-from redis import Redis
+from redis import Redis, RedisError
 from tenacity import retry, stop_after_attempt, wait_fixed, before_sleep_log
 
 from config import settings
@@ -39,5 +39,15 @@ def connect_to_redis() -> Redis:
         password=settings.REDIS_PASSWORD,
         decode_responses=True,
     )
-    redis_client.ping()  # Check the connection
+
+    try:
+        pong = redis_client.ping()  # Check the connection
+    except RedisError as e:
+        logger.exception("Redis ping failed: will retry.")
+
+    if pong is not True and pong != "PONG":
+        logger.error("Unexpected ping response from Redis: %r", pong)
+        raise ConnectionError(f"Unexpected Redis ping reply: {pong!r}")
+
+    logger.info("Connected to Redis (ping OK).")
     return redis_client

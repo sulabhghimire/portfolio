@@ -20,7 +20,7 @@ before_sleep = before_sleep_log(logger, logging.INFO)
     stop=stop_after_attempt(10),  # Stop after 10 attempts (50 seconds total)
     before_sleep=before_sleep,  # Log a message before sleeping
 )
-def connect_to_qdrant():
+def connect_to_qdrant() -> QdrantClient:
     """
     Tries to connect to Qdrant with retries.
     If it fails after all retries, tenacity will re-raise the last exception.
@@ -29,7 +29,7 @@ def connect_to_qdrant():
     if not settings:
         raise ConnectionError("Settings are not loaded, cannot connect to Qdrant.")
 
-    db = QdrantClient(
+    return QdrantClient(
         host=settings.QDRANT_HOST,
         port=settings.QDRANT_PORT,
         api_key=settings.QDRANT_API_KEY,

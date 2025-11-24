@@ -4,4 +4,5 @@ from .jobs import (
     ProcessingJob,
     JobStage,
     ProcessingJobResponse,
+    EmbeddingType,
 )
