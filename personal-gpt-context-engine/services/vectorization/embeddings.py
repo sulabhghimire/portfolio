@@ -1,10 +1,11 @@
 import logging
-from typing import List
+from typing import List, Dict
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from models import EmbeddingType
 from .embedding_model import load_embedding_model
+from vector_db_manager import vector_db_manager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,7 +44,7 @@ def generate_embeddings(
         return []
 
 
-def process_and_store_text(text: str, source_id: str) -> bool:
+def process_and_store_text(text: str, source_id: str, metadata: Dict[str, any]) -> bool:
     """
     The main orchestrator function for the ingestion pipeline.
     It chunks text, generates embeddings, and stores them in the vector database.
@@ -73,6 +74,9 @@ def process_and_store_text(text: str, source_id: str) -> bool:
         if not embeddings:
             logger.error("Embedding generation failed. Halting process.")
             return False
+
+        metadata = {"source": "cv"}
+        vector_db_manager.delete_points_by_metadata(metadata)
 
         logger.info(f"Successfully processed and stored text for source '{source_id}'.")
         return True

@@ -1,2 +1,2 @@
 from .resume_parser import extract_text_from_pdf
-from .vectorization import process_and_store_text
+from .vectorization import process_and_store_text, load_embedding_model

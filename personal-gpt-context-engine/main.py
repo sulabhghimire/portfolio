@@ -7,6 +7,7 @@ from starlette.concurrency import run_in_threadpool
 from config import settings, connect_to_redis, connect_to_qdrant
 from models import ProcessingJobType, ProcessingJobResponse
 from background_jobs import run_cv_ingestion_job
+from vector_db_manager import vector_db_manager
 from utils import generate_unique_id
 
 from job_manager import job_manager
@@ -46,8 +47,8 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("Startup: validating Qdrant connectivity...")
         # run the blocking connect function in a threadpool and wait for it
-        await run_in_threadpool(connect_to_qdrant)
-    except Exception as exc:
+        vector_db_client = await run_in_threadpool(connect_to_qdrant)
+    except Exception:
         logger.exception(
             "Startup: failed to validate Qdrant. Cleaning up and aborting startup."
         )
@@ -59,6 +60,12 @@ async def lifespan(app: FastAPI):
                 "Error while closing redis during shutdown after qdrant failure"
             )
         raise
+
+    try:
+        vector_db_manager.set_client(vector_db_client)
+        vector_db_manager.ensure_collection_exists()
+    except Exception:
+        logger.exception("Failed to qdrant client to vector db.")
 
     logger.info("Startup: Redis connected and Qdrant reachable. Starting app.")
 
